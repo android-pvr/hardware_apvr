@@ -15,7 +15,7 @@
  */
 
 #define LOG_TAG "allocator@2.0-Allocator"
-#define LOG_NDEBUG 0
+//#define LOG_NDEBUG 0
 #include <android-base/logging.h>
 #include <utils/Log.h>
 #include <cutils/properties.h>
@@ -121,7 +121,7 @@ Error Allocator::allocateOneBuffer(
             static_cast<int>(descInfo.height), static_cast<int>(descInfo.format),
             usage, &handle, &stride);
     if (error != 0) {
-        ALOGE("drm_alloc() failed: %d (%s)", error, strerror(-error));
+        ALOGV("drm_alloc() failed: %d (%s)", error, strerror(-error));
         return Error::NO_RESOURCES;
     }
     *outBufferHandle = handle;
