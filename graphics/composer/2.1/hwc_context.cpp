@@ -43,24 +43,6 @@
 
 namespace android {
 
-static unsigned int drm_format_from_hal(int hal_format)
-{
-	switch(hal_format) {
-		case HAL_PIXEL_FORMAT_RGB_888:
-		case HAL_PIXEL_FORMAT_BGRA_8888:
-			return DRM_FORMAT_XRGB8888;
-		case HAL_PIXEL_FORMAT_RGBX_8888:
-		case HAL_PIXEL_FORMAT_RGBA_8888:
-			return DRM_FORMAT_XBGR8888;
-		case HAL_PIXEL_FORMAT_RGB_565:
-			return DRM_FORMAT_RGB565;
-		case HAL_PIXEL_FORMAT_YV12:
-			return DRM_FORMAT_YUV420;
-		default:
-			return 0;
-	}
-}
-
 /*
  * Add a fb object for a bo.
  */
@@ -76,7 +58,7 @@ int hwc_context::bo_add_fb(const private_handle_t *bo)
 
    	uint32_t width = (uint32_t)primary_output.mode.hdisplay;
    	uint32_t height = (uint32_t)primary_output.mode.vdisplay;
-   	uint32_t format = primary_output.fb_format;
+   	uint32_t drm_format = primary_output.drm_format;
 
 	uint32_t handle;
 	int ret = drmPrimeFDToHandle(kms_fd, bo->fd, &handle);
@@ -89,17 +71,10 @@ int hwc_context::bo_add_fb(const private_handle_t *bo)
 	handles[0] = handle;
 	modifiers[0] = DRM_FORMAT_MOD_LINEAR;
 
-    int drm_format = drm_format_from_hal(format);
-	if (drm_format == 0) {
-		ALOGE("error resolving drm format");
-		return -EINVAL;
-	}
-
 	ALOGV("bo_add_fb() width:%d height:%d format:%x handle:%d pitch:%d",
 			width, height,
 					drm_format, handle, pitches[0]);
-	return drmModeAddFB2WithModifiers(kms_fd,
-		width, height,
+	return drmModeAddFB2WithModifiers(kms_fd, width, height,
 		drm_format, handles, pitches, offsets, modifiers,
 		(uint32_t *)&(bo->fb_id), DRM_MODE_FB_MODIFIERS);
 }
@@ -107,7 +82,7 @@ int hwc_context::bo_add_fb(const private_handle_t *bo)
 /*
  * Program CRTC.
  */
-int hwc_context::set_crtc(struct kms_output *output, int fb_id)
+int hwc_context::set_crtc(struct kms_output *output, uint32_t fb_id)
 {
 	int ret;
 
@@ -290,15 +265,6 @@ static void on_signal(int /*sig*/)
 
 void hwc_context::init_features()
 {
-	switch (primary_output.fb_format) {
-	case HAL_PIXEL_FORMAT_RGBA_8888:
-	case HAL_PIXEL_FORMAT_RGB_565:
-		break;
-	default:
-		primary_output.fb_format = HAL_PIXEL_FORMAT_RGBA_8888;
-		break;
-	}
-
 	swap_interval = 1;
 
 	struct sigaction act;
@@ -492,12 +458,6 @@ static drmModeModeInfoPtr find_mode(drmModeConnectorPtr connector)
 			mode = &connector->modes[0];
 	}
 
-	if ((74200 <= mode->clock) && (mode->clock < 74500)) {
-		// Avoid interference with Wifi
-		ALOGV("Trim display clock from %d to 75000", mode->clock);
-		mode->clock = 75000;
-	}
-
 	ALOGV("Established mode:");
 	ALOGV("clock: %d, hdisplay: %d, hsync_start: %d, hsync_end: %d, htotal: %d, hskew: %d", mode->clock, mode->hdisplay, mode->hsync_start, mode->hsync_end, mode->htotal, mode->hskew);
 	ALOGV("vdisplay: %d, vsync_start: %d, vsync_end: %d, vtotal: %d, vscan: %d, vrefresh: %d", mode->vdisplay, mode->vsync_start, mode->vsync_end, mode->vtotal, mode->vscan, mode->vrefresh);
@@ -551,7 +511,7 @@ int hwc_context::init_with_connector(struct kms_output *output,
 	ALOGI("the best mode is %s", mode->name);
 
 	output->mode = *mode;
-	output->fb_format = HAL_PIXEL_FORMAT_RGBA_8888;
+	output->drm_format = DRM_FORMAT_ABGR8888;
 
 	if (connector->mmWidth && connector->mmHeight) {
 		output->xdpi = (output->mode.hdisplay * 25.4 / connector->mmWidth);
@@ -673,7 +633,7 @@ hwc_context::hwc_context() {
    	        width = (uint32_t)primary_output.mode.hdisplay;
    	        height = (uint32_t)primary_output.mode.vdisplay;
    	        fps = (float)primary_output.mode.vrefresh;
-   	        format = primary_output.fb_format;
+                format = HAL_PIXEL_FORMAT_RGBA_8888;
    	        xdpi = (float)primary_output.xdpi;
    	        ydpi = (float)primary_output.ydpi;
    	    }
