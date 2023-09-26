@@ -1,0 +1,6 @@
+service vendor.graphics-allocator-apvr /vendor/bin/hw/android.hardware.graphics.allocator-service.apvr
+    class hal animation
+    user system
+    group graphics drmrpc
+    capabilities SYS_NICE
+

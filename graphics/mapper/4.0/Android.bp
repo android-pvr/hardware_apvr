@@ -1,11 +1,12 @@
 cc_library_shared {
-    name: "android.hardware.graphics.mapper@2.0-impl.mt8173",
+    name: "android.hardware.graphics.mapper@4.0-impl.apvr",
     vendor: true,
     proprietary: true,
     relative_install_path: "hw",
     shared_libs: [
-        "android.hardware.graphics.mapper@2.0",
+        "android.hardware.graphics.mapper@4.0",
         "android.hardware.graphics.common@1.0",
+        "libgralloctypes",
         "libhidlbase",
         "libhardware",
         "libbase",
@@ -19,7 +20,6 @@ cc_library_shared {
         "libdrm_gralloc",
     ],
     header_libs: [
-        "android.hardware.graphics.mapper@2.0-passthrough_headers",
         "libdrm_headers",
     ],
     include_dirs: [
