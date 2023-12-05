@@ -1,0 +1,17 @@
+cc_library_static {
+    name: "libdrm_gralloc",
+    srcs: [
+        "drm_gralloc.cpp",
+    ],
+    export_include_dirs: ["."],
+    shared_libs: [
+        "libutils",
+        "libcutils",
+        "libdrm",
+        "liblog",
+    ],
+    header_libs: [
+        "libhardware_headers",
+    ],
+    vendor: true,
+}
